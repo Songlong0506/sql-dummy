@@ -1,0 +1,177 @@
+@model SqlDummySeeder.Models.ConnectionInput
+@{
+    ViewData["Title"] = "Bước 1 — Kết nối";
+    var saved = (IEnumerable<SqlDummySeeder.Services.SavedConnection>)ViewBag.Saved ?? Enumerable.Empty<SqlDummySeeder.Services.SavedConnection>();
+    var savedJson = System.Text.Json.JsonSerializer.Serialize(saved, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+}
+<div class="stepper">
+    <div class="step active">1. Kết nối</div>
+    <div class="step">2. Chọn bảng</div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0">Kết nối SQL Server</h5>
+        <span class="text-muted small">Lưu cấu hình theo <strong>Server Name</strong> (tự động khi kết nối thành công)</span>
+    </div>
+
+    <div class="alert alert-warning mt-3 py-2 px-3 small">
+        Mật khẩu sẽ được lưu <em>plaintext</em> trong máy của bạn tại thư mục AppData\\SqlDummySeeder.
+        Vui lòng dùng trên máy cá nhân / môi trường phát triển.
+    </div>
+
+    <form asp-action="Index" method="post" class="mt-3">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Server Name</label>
+                <div class="input-group">
+                    <input asp-for="ServerName" id="serverName" class="form-control" placeholder=".\SQLEXPRESS hoặc 127.0.0.1" />
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Đã lưu</button>
+                    <ul class="dropdown-menu dropdown-menu-end" id="savedServersDropdown">
+                        <!-- filled by JS -->
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Authentication</label>
+                <select asp-for="AuthMode" class="form-select" id="authMode">
+                    <option value="Windows">Windows Authentication</option>
+                    <option value="Sql">SQL Server Authentication</option>
+                </select>
+            </div>
+
+            <div class="col-md-6" id="sqlUserBox" style="display:none;">
+                <label class="form-label">User Name</label>
+                <input asp-for="UserName" id="userName" class="form-control" />
+            </div>
+            <div class="col-md-6" id="sqlPassBox" style="display:none;">
+                <label class="form-label">Password</label>
+                <input asp-for="Password" id="password" type="password" class="form-control" />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Database Name</label>
+                <div class="input-group">
+                    <select asp-for="DatabaseName" id="dbSelect" class="form-select" disabled>
+                        <option value="">-- chọn database --</option>
+                    </select>
+                    <button class="btn btn-outline-secondary" type="button" id="btnLoadDb">Load</button>
+                </div>
+                <div class="form-text" id="dbHelp">Nhập Server + Auth rồi nhấn Load để lấy danh sách DB.</div>
+            </div>
+
+        </div>
+        <div class="text-danger mt-3">
+            @Html.ValidationSummary()
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Kết nối & Liệt kê bảng</button>
+        </div>
+    </form>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+(function(){
+    const saved = @Html.Raw(savedJson);
+    const dropdown = document.getElementById('savedServersDropdown');
+    const serverInput = document.getElementById('serverName');
+    const auth = document.getElementById('authMode');
+    const u = document.getElementById('userName');
+    const p = document.getElementById('password');
+    const userBox = document.getElementById('sqlUserBox');
+    const passBox = document.getElementById('sqlPassBox');
+    const dbSelect = document.getElementById('dbSelect');
+    const btnLoad = document.getElementById('btnLoadDb');
+    const dbHelp = document.getElementById('dbHelp');
+
+    function toggleAuth(){
+        const isSql = auth.value === 'Sql';
+        userBox.style.display = isSql ? 'block' : 'none';
+        passBox.style.display = isSql ? 'block' : 'none';
+    }
+    auth.addEventListener('change', toggleAuth);
+    toggleAuth();
+
+    function applySaved(sc){
+        serverInput.value = sc.serverName || '';
+        auth.value = sc.authMode || 'Windows';
+        u.value = sc.userName || '';
+        p.value = sc.password || '';
+        toggleAuth();
+        loadDatabases(); // auto-load when choose saved
+    }
+
+    function rebuildDropdown(){
+        dropdown.innerHTML = '';
+        if (!Array.isArray(saved) || saved.length === 0){
+            const li = document.createElement('li');
+            li.innerHTML = '<span class="dropdown-item-text text-muted">Chưa có server nào</span>';
+            dropdown.appendChild(li);
+            return;
+        }
+        saved.forEach(sc => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.className = 'dropdown-item';
+            a.href = 'javascript:void(0)';
+            a.textContent = sc.serverName + (sc.authMode === 'Sql' ? '  (SQL Auth)' : '  (Windows)');
+            a.addEventListener('click', () => applySaved(sc));
+            li.appendChild(a);
+            dropdown.appendChild(li);
+        });
+    }
+    rebuildDropdown();
+
+    async function loadDatabases(){
+        const body = {
+            serverName: serverInput.value.trim(),
+            databaseName: "", // ignored
+            authMode: auth.value,
+            userName: u.value,
+            password: p.value
+        };
+        if (!body.serverName){
+            alert('Nhập Server Name trước.');
+            return;
+        }
+        dbSelect.innerHTML = '<option>Đang tải...</option>';
+        dbSelect.disabled = true;
+        dbHelp.textContent = 'Đang tải danh sách DB...';
+
+        try {
+            const res = await fetch('/Home/ListDatabases', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const js = await res.json();
+            if (!js.ok){
+                dbSelect.innerHTML = '<option value="">-- chọn database --</option>';
+                dbHelp.textContent = 'Lỗi: ' + js.error;
+                return;
+            }
+            const list = js.data || [];
+            dbSelect.innerHTML = '<option value="">-- chọn database --</option>';
+            list.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                dbSelect.appendChild(opt);
+            });
+            dbSelect.disabled = false;
+            dbHelp.textContent = 'Chọn một database.';
+        } catch (e){
+            dbSelect.innerHTML = '<option value="">-- chọn database --</option>';
+            dbHelp.textContent = 'Lỗi: ' + e;
+        }
+    }
+
+    btnLoad.addEventListener('click', loadDatabases);
+    serverInput.addEventListener('blur', () => { if (serverInput.value.trim()) loadDatabases(); });
+})();
+</script>
+}

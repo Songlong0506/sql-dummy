@@ -1,0 +1,169 @@
+@model SqlDummySeeder.Models.TablesSelectionInput
+@{
+    ViewData["Title"] = "Bước 2 — Chọn bảng & Rules";
+}
+<div class="stepper">
+    <div class="step done">1. Kết nối</div>
+    <div class="step active">2. Chọn bảng</div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Chọn bảng để tạo dữ liệu</h5>
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <button class="btn btn-sm btn-outline-primary" type="button" id="btnSelectAll">Chọn tất cả</button>
+            <button class="btn btn-sm btn-outline-secondary" type="button" id="btnClearAll">Bỏ chọn</button>
+            <span class="text-muted ms-auto">Mặc định mỗi bảng 10 bản ghi</span>
+        </div>
+
+        <form asp-action="SeedMany" method="post" id="seedForm">
+            <input type="hidden" name="Connection.ServerName" value="@Model.Connection.ServerName" />
+            <input type="hidden" name="Connection.DatabaseName" value="@Model.Connection.DatabaseName" />
+            <input type="hidden" name="Connection.AuthMode" value="@Model.Connection.AuthMode" />
+            <input type="hidden" name="Connection.UserName" value="@Model.Connection.UserName" />
+            <input type="hidden" name="Connection.Password" value="@Model.Connection.Password" />
+
+            <div class="table-responsive table-fixed border rounded">
+              <table class="table table-sm align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:48px;">Chọn</th>
+                    <th>Schema.Table</th>
+                    <th style="width:120px;">Số lượng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                @for (int i = 0; i < Model.Tables.Count; i++)
+                {
+                    <tr>
+                      <td>
+                        <input class="form-check-input table-check" type="checkbox" name="Tables[@i].Selected" value="true" />
+                        <input type="hidden" name="Tables[@i].Selected" value="false" />
+                      </td>
+                      <td>
+                        <input type="hidden" name="Tables[@i].SchemaName" value="@Model.Tables[i].SchemaName" />
+                        <input type="hidden" name="Tables[@i].TableName" value="@Model.Tables[i].TableName" />
+                        <span class="monospace">@Model.Tables[i].SchemaName.@Model.Tables[i].TableName</span>
+                      </td>
+                      <td>
+                        <input name="Tables[@i].Count" type="number" class="form-control form-control-sm" value="@Model.Tables[i].Count" min="1" />
+                      </td>
+                    </tr>
+                }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-3">
+              <label class="form-label">Rules JSON (tùy chọn, override theo bảng/cột)</label>
+              <textarea name="RulesJson" rows="10" class="form-control monospace" placeholder='{
+  "tables": {
+    "dbo.Users": {
+      "count": 50,
+      "columns": {
+        "Email": { "type": "email" },
+        "Age": { "type": "randomInt", "min": 18, "max": 60 },
+        "CreatedAt": { "type": "dateRecentYears", "max": 3 }
+      }
+    },
+    "dbo.Orders": {
+      "count": 1000,
+      "columns": {
+        "Status": { "value": "Paid" }
+      }
+    }
+  }
+}'></textarea>
+              <div class="form-text">Khóa bảng dùng format <strong>schema.table</strong> (vd: <code>dbo.Users</code>). Hỗ trợ các type: email, phone, fullname, firstname, lastname, username, password, title, sentence(s), paragraph(s), city, country, address, zip, guid, randomInt, randomDecimal, dateRecentYears, bool, code.</div>
+            </div>
+
+            <div class="text-danger mt-2">
+                @Html.ValidationSummary()
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+              <a class="btn btn-secondary" href="@Url.Action("Index","Home")">← Quay lại</a>
+              <button class="btn btn-success" type="submit">Seed dữ liệu</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-body">
+        <h6 class="card-title">Gợi ý</h6>
+        <ul class="small mb-0">
+            <li>Tool sẽ sắp xếp thứ tự seed dựa trên <em>foreign keys</em> (bảng cha trước bảng con).</li>
+            <li>Nếu bảng con có FK mà bảng cha chưa có dữ liệu, bạn sẽ nhận lỗi. Hãy tăng số lượng ở bảng cha / chọn seed bảng cha.</li>
+            <li>Chỉ tự động map <em>FK một cột</em>. FK nhiều cột nên dùng Rules JSON để kiểm soát.</li>
+            <li>Tool bỏ qua cột <code>identity</code>, <code>computed</code>, <code>rowversion</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal to show seeding result -->
+<div class="modal fade" id="seedResultModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Kết quả seed</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center gap-2 text-muted">
+          <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+          <span>Đang chạy...</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+(function(){
+    const btnAll = document.getElementById('btnSelectAll');
+    const btnNone = document.getElementById('btnClearAll');
+    const checks = () => Array.from(document.querySelectorAll('.table-check'));
+    btnAll.addEventListener('click', () => checks().forEach(c => c.checked = true));
+    btnNone.addEventListener('click', () => checks().forEach(c => c.checked = false));
+
+    const form = document.getElementById('seedForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const modalEl = document.getElementById('seedResultModal');
+    const modalBody = modalEl.querySelector('.modal-body');
+    const modal = new bootstrap.Modal(modalEl);
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Show modal with spinner
+        modalBody.innerHTML = '<div class="d-flex align-items-center gap-2 text-muted"><div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div><span>Đang chạy...</span></div>';
+        modal.show();
+        submitBtn.disabled = true;
+        try {
+            const res = await fetch('/Home/SeedMany', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: new FormData(form)
+            });
+            const html = await res.text();
+            modalBody.innerHTML = html;
+        } catch (err) {
+            modalBody.innerHTML = '<div class="alert alert-danger">Lỗi: ' + err + '</div>';
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+})();
+</script>
+}

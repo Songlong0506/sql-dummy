@@ -1,0 +1,42 @@
+@model SqlDummySeeder.Models.SeedResult
+@{
+    ViewData["Title"] = "Bước 3 — Kết quả";
+}
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Kết quả seed</h5>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Schema.Table</th>
+            <th class="text-end">Inserted</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+        @foreach (var r in Model.Tables)
+        {
+          <tr>
+            <td class="monospace">@r.SchemaName.@r.TableName</td>
+            <td class="text-end">@r.Inserted</td>
+            <td>
+              @if (!string.IsNullOrWhiteSpace(r.Error))
+              {
+                <span class="badge text-bg-danger">Lỗi</span> @r.Error
+              }
+              else
+              {
+                <span class="badge text-bg-success">OK</span>
+              }
+            </td>
+          </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-3 d-flex gap-2">
+      <a class="btn btn-primary" href="@Url.Action("Index","Home")">Seed tiếp</a>
+    </div>
+  </div>
+</div>
