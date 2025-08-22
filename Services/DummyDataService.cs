@@ -293,7 +293,7 @@ public class DummyDataService
         {
             return t switch
             {
-                "bit" => bool.Parse(raw),
+                "bit" => ParseBool(raw),
                 "tinyint" => byte.Parse(raw),
                 "smallint" => short.Parse(raw),
                 "int" => int.Parse(raw),
@@ -311,6 +311,13 @@ public class DummyDataService
         {
             return raw.Truncate(col.MaxLength ?? 4000);
         }
+    }
+
+    private static bool ParseBool(string raw)
+    {
+        if (bool.TryParse(raw, out var b)) return b;
+        if (int.TryParse(raw, out var n)) return n != 0;
+        return false;
     }
 
     private async Task<Dictionary<string, List<object>>> LoadForeignKeyLookupsAsync(SqlConnection conn, ConnectionInput connInfo, string schema, string table, List<ColumnInfo> columns)
@@ -334,7 +341,13 @@ public class DummyDataService
             var parentCol = fk.ParentColumn;
             var parentTable = $"[{fk.ParentSchema}].[{fk.ParentTable}]";
             var sql = $"SELECT DISTINCT TOP 1000 [{parentCol}] FROM {parentTable}";
-            var values = (await conn.QueryAsync<object>(sql)).ToList();
+            var rows = await conn.QueryAsync(sql);
+            var values = new List<object>();
+            foreach (var row in rows)
+            {
+                var dict = (IDictionary<string, object>)row;
+                values.Add(dict[parentCol]);
+            }
             lookup[childCol] = values;
         }
 
