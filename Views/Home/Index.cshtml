@@ -48,8 +48,12 @@
             <div class="col-md-6">
                 <label class="form-label">Database Name</label>
                 <div class="input-group">
-                    <select asp-for="Connection.DatabaseName" id="dbSelect" class="form-select" disabled>
+                    <select asp-for="Connection.DatabaseName" id="dbSelect" class="form-select" @(string.IsNullOrEmpty(Model.Connection.DatabaseName) ? "disabled" : "")>
                         <option value="">-- chọn database --</option>
+                        @if (!string.IsNullOrEmpty(Model.Connection.DatabaseName))
+                        {
+                            <option value="@Model.Connection.DatabaseName" selected>@Model.Connection.DatabaseName</option>
+                        }
                     </select>
                     <button class="btn btn-outline-secondary" type="button" id="btnLoadDb">Load</button>
                 </div>
