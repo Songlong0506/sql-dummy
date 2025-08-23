@@ -77,7 +77,6 @@ public class HomeController : Controller
                 Selected = false
             }).ToList();
 
-            model.RulesJson = "";
             ViewBag.Saved = _saved.GetAll();
             return View(model);
         }
@@ -117,34 +116,7 @@ public class HomeController : Controller
                 return View("Index", selection);
             }
 
-            RuleConfig? config = null;
-            if (!string.IsNullOrWhiteSpace(selection.RulesJson))
-            {
-                try
-                {
-                    config = RuleConfig.Parse(selection.RulesJson!);
-                }
-                catch (Exception exCfg)
-                {
-                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    {
-                        var err = new SeedResult();
-                        err.Tables.Add(new PerTableResult
-                        {
-                            SchemaName = "-",
-                            TableName = "-",
-                            Inserted = 0,
-                            Error = "Rules JSON không hợp lệ: " + exCfg.Message
-                        });
-                        return PartialView("_ResultTable", err);
-                    }
-                    ModelState.AddModelError("", $"Rules JSON không hợp lệ: {exCfg.Message}");
-                    ViewBag.Saved = _saved.GetAll();
-                    return View("Index", selection);
-                }
-            }
-
-            var result = await _dummy.InsertDummyForTablesAsync(selection.Connection, selected, config);
+            var result = await _dummy.InsertDummyForTablesAsync(selection.Connection, selected);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
