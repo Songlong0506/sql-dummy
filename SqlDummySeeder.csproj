@@ -9,4 +9,7 @@
     <PackageReference Include="Dapper" Version="2.1.28" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="wwwroot\css\" />
+  </ItemGroup>
 </Project>
