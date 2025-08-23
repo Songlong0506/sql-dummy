@@ -5,6 +5,8 @@
 - Giữ toàn bộ tính năng seed (FK-aware, Rules JSON, Bogus, fixes nvarchar(max)/varchar(max), Truncate an toàn).
 
 ## Run
+Yêu cầu [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
+
 ```bash
 dotnet restore
 dotnet run
