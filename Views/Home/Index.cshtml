@@ -48,7 +48,7 @@
             <div class="col-md-6">
                 <label class="form-label">Database Name</label>
                 <div class="input-group">
-                    <select asp-for="Connection.DatabaseName" id="dbSelect" class="form-select" disabled>
+                    <select asp-for="Connection.DatabaseName" id="dbSelect" class="form-select" disabled="@(string.IsNullOrEmpty(Model.Connection.DatabaseName) ? "" : null)">
                         <option value="">-- chọn database --</option>
                     </select>
                     <button class="btn btn-outline-secondary" type="button" id="btnLoadDb">Load</button>
@@ -207,7 +207,7 @@
     }
     rebuildDropdown();
 
-    async function loadDatabases(){
+    async function loadDatabases(selected){
         const body = {
             serverName: serverInput.value.trim(),
             databaseName: "", // ignored
@@ -245,14 +245,22 @@
             });
             dbSelect.disabled = false;
             dbHelp.textContent = 'Chọn một database.';
+            if (selected) {
+                dbSelect.value = selected;
+            }
         } catch (e){
             dbSelect.innerHTML = '<option value="">-- chọn database --</option>';
             dbHelp.textContent = 'Lỗi: ' + e;
         }
     }
 
-    btnLoad.addEventListener('click', loadDatabases);
+    btnLoad.addEventListener('click', () => loadDatabases());
     serverInput.addEventListener('blur', () => { if (serverInput.value.trim()) loadDatabases(); });
+
+    const initialDb = '@Model.Connection.DatabaseName';
+    if (serverInput.value.trim()) {
+        loadDatabases(initialDb);
+    }
 
     dbSelect.addEventListener('change', () => {
         if (dbSelect.value){
