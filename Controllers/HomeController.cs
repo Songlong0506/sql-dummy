@@ -20,7 +20,10 @@ public class HomeController : Controller
     [HttpGet]
     public IActionResult Index()
     {
-        var model = new ConnectionInput { AuthMode = "Windows" };
+        var model = new TablesSelectionInput
+        {
+            Connection = new ConnectionInput { AuthMode = "Windows" }
+        };
         ViewBag.Saved = _saved.GetAll();
         return View(model);
     }
@@ -43,48 +46,46 @@ public class HomeController : Controller
         }
     }
 
-    // Step 1 -> Step 2 (list tables) + save/refresh saved connections
+    // Connect and list tables on the same page, save/refresh saved connections
     [HttpPost]
-    public async Task<IActionResult> Index(ConnectionInput input)
+    public async Task<IActionResult> Index(TablesSelectionInput model)
     {
-        if (string.IsNullOrWhiteSpace(input.ServerName) || string.IsNullOrWhiteSpace(input.DatabaseName))
+        if (string.IsNullOrWhiteSpace(model.Connection.ServerName) || string.IsNullOrWhiteSpace(model.Connection.DatabaseName))
         {
             ModelState.AddModelError("", "Vui lòng nhập ServerName và chọn Database Name.");
             ViewBag.Saved = _saved.GetAll();
-            return View(input);
+            return View(model);
         }
 
         try
         {
-            var tables = await _meta.GetTablesAsync(input);
+            var tables = await _meta.GetTablesAsync(model.Connection);
 
             _saved.Upsert(new SavedConnection
             {
-                ServerName = input.ServerName.Trim(),
-                AuthMode = input.AuthMode,
-                UserName = input.UserName,
-                Password = input.Password
+                ServerName = model.Connection.ServerName.Trim(),
+                AuthMode = model.Connection.AuthMode,
+                UserName = model.Connection.UserName,
+                Password = model.Connection.Password
             });
 
-            var selection = new TablesSelectionInput
+            model.Tables = tables.Select(t => new TableSeedRequest
             {
-                Connection = input,
-                Tables = tables.Select(t => new TableSeedRequest
-                {
-                    SchemaName = t.SchemaName,
-                    TableName = t.TableName,
-                    Count = 10,
-                    Selected = false
-                }).ToList(),
-                RulesJson = ""
-            };
-            return View("Tables", selection);
+                SchemaName = t.SchemaName,
+                TableName = t.TableName,
+                Count = 10,
+                Selected = false
+            }).ToList();
+
+            model.RulesJson = "";
+            ViewBag.Saved = _saved.GetAll();
+            return View(model);
         }
         catch (Exception ex)
         {
             ModelState.AddModelError("", $"Không kết nối được: {ex.Message}");
             ViewBag.Saved = _saved.GetAll();
-            return View(input);
+            return View(model);
         }
     }
 
@@ -112,7 +113,8 @@ public class HomeController : Controller
                     });
                     return PartialView("_ResultTable", err);
                 }
-                return View("Tables", selection);
+                ViewBag.Saved = _saved.GetAll();
+                return View("Index", selection);
             }
 
             RuleConfig? config = null;
@@ -137,7 +139,8 @@ public class HomeController : Controller
                         return PartialView("_ResultTable", err);
                     }
                     ModelState.AddModelError("", $"Rules JSON không hợp lệ: {exCfg.Message}");
-                    return View("Tables", selection);
+                    ViewBag.Saved = _saved.GetAll();
+                    return View("Index", selection);
                 }
             }
 
