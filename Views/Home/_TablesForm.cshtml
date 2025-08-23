@@ -1,13 +1,5 @@
 @model SqlDummySeeder.Models.TablesSelectionInput
-@{
-    ViewData["Title"] = "Bước 2 — Chọn bảng & Rules";
-}
-<div class="stepper">
-    <div class="step done">1. Kết nối</div>
-    <div class="step active">2. Chọn bảng</div>
-</div>
-
-<div class="row g-3">
+<div class="row g-3 mt-4">
   <div class="col-lg-7">
     <div class="card">
       <div class="card-body">
@@ -75,7 +67,7 @@
       }
     }
   }
-}'></textarea>
+}'>@Model.RulesJson</textarea>
               <div class="form-text">Khóa bảng dùng format <strong>schema.table</strong> (vd: <code>dbo.Users</code>). Hỗ trợ các type: email, phone, fullname, firstname, lastname, username, password, title, sentence(s), paragraph(s), city, country, address, zip, guid, randomInt, randomDecimal, dateRecentYears, bool, code.</div>
             </div>
 
@@ -84,7 +76,6 @@
             </div>
 
             <div class="mt-3 d-flex gap-2">
-              <a class="btn btn-secondary" href="@Url.Action("Index","Home")">← Quay lại</a>
               <button class="btn btn-success" type="submit">Seed dữ liệu</button>
             </div>
         </form>
@@ -107,7 +98,6 @@
   </div>
 </div>
 
-
 <!-- Modal to show seeding result -->
 <div class="modal fade" id="seedResultModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -128,42 +118,3 @@
     </div>
   </div>
 </div>
-
-@section Scripts {
-<script>
-(function(){
-    const btnAll = document.getElementById('btnSelectAll');
-    const btnNone = document.getElementById('btnClearAll');
-    const checks = () => Array.from(document.querySelectorAll('.table-check'));
-    btnAll.addEventListener('click', () => checks().forEach(c => c.checked = true));
-    btnNone.addEventListener('click', () => checks().forEach(c => c.checked = false));
-
-    const form = document.getElementById('seedForm');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const modalEl = document.getElementById('seedResultModal');
-    const modalBody = modalEl.querySelector('.modal-body');
-    const modal = new bootstrap.Modal(modalEl);
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        // Show modal with spinner
-        modalBody.innerHTML = '<div class="d-flex align-items-center gap-2 text-muted"><div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div><span>Đang chạy...</span></div>';
-        modal.show();
-        submitBtn.disabled = true;
-        try {
-            const res = await fetch('/Home/SeedMany', {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: new FormData(form)
-            });
-            const html = await res.text();
-            modalBody.innerHTML = html;
-        } catch (err) {
-            modalBody.innerHTML = '<div class="alert alert-danger">Lỗi: ' + err + '</div>';
-        } finally {
-            submitBtn.disabled = false;
-        }
-    });
-})();
-</script>
-}

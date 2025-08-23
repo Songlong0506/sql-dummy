@@ -20,7 +20,10 @@ public class HomeController : Controller
     [HttpGet]
     public IActionResult Index()
     {
-        var model = new ConnectionInput { AuthMode = "Windows" };
+        var model = new TablesSelectionInput
+        {
+            Connection = new ConnectionInput { AuthMode = "Windows" }
+        };
         ViewBag.Saved = _saved.GetAll();
         return View(model);
     }
@@ -47,11 +50,11 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<IActionResult> Index(ConnectionInput input)
     {
+        ViewBag.Saved = _saved.GetAll();
         if (string.IsNullOrWhiteSpace(input.ServerName) || string.IsNullOrWhiteSpace(input.DatabaseName))
         {
             ModelState.AddModelError("", "Vui lòng nhập ServerName và chọn Database Name.");
-            ViewBag.Saved = _saved.GetAll();
-            return View(input);
+            return View(new TablesSelectionInput { Connection = input });
         }
 
         try
@@ -78,13 +81,12 @@ public class HomeController : Controller
                 }).ToList(),
                 RulesJson = ""
             };
-            return View("Tables", selection);
+            return View(selection);
         }
         catch (Exception ex)
         {
             ModelState.AddModelError("", $"Không kết nối được: {ex.Message}");
-            ViewBag.Saved = _saved.GetAll();
-            return View(input);
+            return View(new TablesSelectionInput { Connection = input });
         }
     }
 
@@ -112,7 +114,7 @@ public class HomeController : Controller
                     });
                     return PartialView("_ResultTable", err);
                 }
-                return View("Tables", selection);
+                return View("Index", selection);
             }
 
             RuleConfig? config = null;
@@ -137,7 +139,7 @@ public class HomeController : Controller
                         return PartialView("_ResultTable", err);
                     }
                     ModelState.AddModelError("", $"Rules JSON không hợp lệ: {exCfg.Message}");
-                    return View("Tables", selection);
+                    return View("Index", selection);
                 }
             }
 

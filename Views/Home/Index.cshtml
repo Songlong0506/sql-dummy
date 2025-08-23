@@ -1,13 +1,9 @@
-@model SqlDummySeeder.Models.ConnectionInput
+@model SqlDummySeeder.Models.TablesSelectionInput
 @{
-    ViewData["Title"] = "Bước 1 — Kết nối";
+    ViewData["Title"] = "Kết nối & Chọn bảng";
     var saved = (IEnumerable<SqlDummySeeder.Services.SavedConnection>)ViewBag.Saved ?? Enumerable.Empty<SqlDummySeeder.Services.SavedConnection>();
     var savedJson = System.Text.Json.JsonSerializer.Serialize(saved, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
 }
-<div class="stepper">
-    <div class="step active">1. Kết nối</div>
-    <div class="step">2. Chọn bảng</div>
-</div>
 
 <div class="card">
   <div class="card-body">
@@ -26,7 +22,7 @@
             <div class="col-md-6">
                 <label class="form-label">Server Name</label>
                 <div class="input-group">
-                    <input asp-for="ServerName" id="serverName" class="form-control" placeholder=".\SQLEXPRESS hoặc 127.0.0.1" />
+                    <input asp-for="Connection.ServerName" id="serverName" class="form-control" placeholder=".\SQLEXPRESS hoặc 127.0.0.1" />
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Đã lưu</button>
                     <ul class="dropdown-menu dropdown-menu-end" id="savedServersDropdown">
                         <!-- filled by JS -->
@@ -36,7 +32,7 @@
 
             <div class="col-md-6">
                 <label class="form-label">Authentication</label>
-                <select asp-for="AuthMode" class="form-select" id="authMode">
+                <select asp-for="Connection.AuthMode" class="form-select" id="authMode">
                     <option value="Windows">Windows Authentication</option>
                     <option value="Sql">SQL Server Authentication</option>
                 </select>
@@ -44,17 +40,17 @@
 
             <div class="col-md-6" id="sqlUserBox" style="display:none;">
                 <label class="form-label">User Name</label>
-                <input asp-for="UserName" id="userName" class="form-control" />
+                <input asp-for="Connection.UserName" id="userName" class="form-control" />
             </div>
             <div class="col-md-6" id="sqlPassBox" style="display:none;">
                 <label class="form-label">Password</label>
-                <input asp-for="Password" id="password" type="password" class="form-control" />
+                <input asp-for="Connection.Password" id="password" type="password" class="form-control" />
             </div>
 
             <div class="col-md-6">
                 <label class="form-label">Database Name</label>
                 <div class="input-group">
-                    <select asp-for="DatabaseName" id="dbSelect" class="form-select" disabled>
+                    <select asp-for="Connection.DatabaseName" id="dbSelect" class="form-select" disabled>
                         <option value="">-- chọn database --</option>
                     </select>
                     <button class="btn btn-outline-secondary" type="button" id="btnLoadDb">Load</button>
@@ -71,7 +67,12 @@
         </div>
     </form>
   </div>
-</div>
+  </div>
+
+@if (Model.Tables.Any())
+{
+    @await Html.PartialAsync("_TablesForm", Model)
+}
 
 @section Scripts {
 <script>
@@ -174,4 +175,43 @@
     serverInput.addEventListener('blur', () => { if (serverInput.value.trim()) loadDatabases(); });
 })();
 </script>
+@if (Model.Tables.Any())
+{
+<script>
+(function(){
+    const btnAll = document.getElementById('btnSelectAll');
+    const btnNone = document.getElementById('btnClearAll');
+    const checks = () => Array.from(document.querySelectorAll('.table-check'));
+    btnAll.addEventListener('click', () => checks().forEach(c => c.checked = true));
+    btnNone.addEventListener('click', () => checks().forEach(c => c.checked = false));
+
+    const form = document.getElementById('seedForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const modalEl = document.getElementById('seedResultModal');
+    const modalBody = modalEl.querySelector('.modal-body');
+    const modal = new bootstrap.Modal(modalEl);
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Show modal with spinner
+        modalBody.innerHTML = '<div class="d-flex align-items-center gap-2 text-muted"><div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div><span>Đang chạy...</span></div>';
+        modal.show();
+        submitBtn.disabled = true;
+        try {
+            const res = await fetch('/Home/SeedMany', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: new FormData(form)
+            });
+            const html = await res.text();
+            modalBody.innerHTML = html;
+        } catch (err) {
+            modalBody.innerHTML = '<div class="alert alert-danger">Lỗi: ' + err + '</div>';
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+})();
+</script>
+}
 }
