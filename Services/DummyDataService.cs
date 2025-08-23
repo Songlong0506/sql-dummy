@@ -59,7 +59,7 @@ public class DummyDataService
         _meta = meta;
     }
 
-    public async Task<SeedResult> InsertDummyForTablesAsync(ConnectionInput connInfo, List<TableSeedRequest> tables, RuleConfig? config)
+    public async Task<SeedResult> InsertDummyForTablesAsync(ConnectionInput connInfo, List<TableSeedRequest> tables)
     {
         var result = new SeedResult();
 
@@ -74,10 +74,10 @@ public class DummyDataService
             var key = $"{ti.SchemaName}.{ti.TableName}";
             var req = reqMap[key];
 
-            var count = config?.TryGetCount(ti.SchemaName, ti.TableName) ?? req.Count;
+            var count = req.Count;
             try
             {
-                var inserted = await InsertDummyAsync(connInfo, ti.SchemaName, ti.TableName, count, config);
+                var inserted = await InsertDummyAsync(connInfo, ti.SchemaName, ti.TableName, count);
                 result.Tables.Add(new PerTableResult { SchemaName = ti.SchemaName, TableName = ti.TableName, Inserted = inserted });
             }
             catch (Exception ex)
@@ -89,7 +89,7 @@ public class DummyDataService
         return result;
     }
 
-    public async Task<int> InsertDummyAsync(ConnectionInput connInfo, string schema, string table, int count, RuleConfig? config)
+    public async Task<int> InsertDummyAsync(ConnectionInput connInfo, string schema, string table, int count)
     {
         var columns = (await _meta.GetColumnsAsync(connInfo, schema, table))
             .Where(c => !c.IsIdentity && !c.IsComputed && !c.IsRowVersion)
@@ -126,8 +126,7 @@ public class DummyDataService
                     continue;
                 }
 
-                var rule = config?.TryGet(schema, table, col.ColumnName);
-                row[col.ColumnName] = GenerateValue(faker, col, rule) ?? DBNull.Value;
+            row[col.ColumnName] = GenerateValue(faker, col) ?? DBNull.Value;
             }
             dt.Rows.Add(row);
         }
@@ -170,56 +169,8 @@ public class DummyDataService
     }
 
 
-    private static object? GenerateValue(Faker faker, ColumnInfo col, ColumnRule? rule)
+    private static object? GenerateValue(Faker faker, ColumnInfo col)
     {
-        if (rule != null)
-        {
-            if (!string.IsNullOrWhiteSpace(rule.Value))
-            {
-                return CoerceValue(rule.Value!, col);
-            }
-
-            if (!string.IsNullOrWhiteSpace(rule.Type))
-            {
-                var t = rule.Type!.ToLowerInvariant();
-                var min = rule.Min ?? 0;
-                var max = rule.Max ?? 1000;
-                var scale = rule.Scale ?? col.NumericScale ?? 2;
-                var maxLen = rule.MaxLength ?? col.MaxLength ?? 100;
-
-                switch (t)
-                {
-                    case "email": return faker.Internet.Email();
-                    case "phone": return faker.Phone.PhoneNumber();
-                    case "fullname": return faker.Name.FullName();
-                    case "firstname": return faker.Name.FirstName();
-                    case "lastname": return faker.Name.LastName();
-                    case "username": return faker.Internet.UserName();
-                    case "password": return faker.Internet.Password();
-                    case "title": return faker.Lorem.Sentence(4).Truncate(maxLen);
-                    case "sentence": return faker.Lorem.Sentence().Truncate(maxLen);
-                    case "sentences": return faker.Lorem.Sentences(2).Truncate(maxLen);
-                    case "paragraph": return faker.Lorem.Paragraph().Truncate(maxLen);
-                    case "paragraphs": return faker.Lorem.Paragraphs(2).Truncate(maxLen);
-                    case "city": return faker.Address.City();
-                    case "country": return faker.Address.Country();
-                    case "address": return faker.Address.FullAddress().Truncate(maxLen);
-                    case "zip": return faker.Address.ZipCode();
-                    case "guid": return Guid.NewGuid();
-                    case "randomint": return faker.Random.Int(min, max);
-                    case "randomdecimal": return Math.Round(faker.Random.Decimal(min, max <= min ? min + 1 : max), scale);
-                    case "daterecentyears":
-                        var years = Math.Max(1, max);
-                        return faker.Date.Between(DateTime.UtcNow.AddYears(-years), DateTime.UtcNow);
-                    case "bool": return faker.Random.Bool();
-                    case "code":
-                        return IsNumericType(col.DataType) ? (object)faker.Random.Int(0, 999999) :
-                                          IsBooleanType(col.DataType) ? (object)faker.Random.Bool() :
-                                          faker.Random.AlphaNumeric(Math.Min(maxLen, 12));
-                }
-            }
-        }
-
         var name = col.ColumnName.ToLowerInvariant();
         var dt = col.DataType.ToLowerInvariant();
 
@@ -285,40 +236,6 @@ public class DummyDataService
         };
     }
 
-
-    private static object CoerceValue(string raw, ColumnInfo col)
-    {
-        var t = col.DataType.ToLowerInvariant();
-        try
-        {
-            return t switch
-            {
-                "bit" => ParseBool(raw),
-                "tinyint" => byte.Parse(raw),
-                "smallint" => short.Parse(raw),
-                "int" => int.Parse(raw),
-                "bigint" => long.Parse(raw),
-                "decimal" or "numeric" or "money" or "smallmoney" => decimal.Parse(raw),
-                "float" => double.Parse(raw),
-                "real" => float.Parse(raw),
-                "date" or "datetime" or "smalldatetime" or "datetime2" => DateTime.Parse(raw),
-                "time" => TimeSpan.Parse(raw),
-                "uniqueidentifier" => Guid.Parse(raw),
-                _ => raw.Truncate(col.MaxLength ?? 4000)
-            };
-        }
-        catch
-        {
-            return raw.Truncate(col.MaxLength ?? 4000);
-        }
-    }
-
-    private static bool ParseBool(string raw)
-    {
-        if (bool.TryParse(raw, out var b)) return b;
-        if (int.TryParse(raw, out var n)) return n != 0;
-        return false;
-    }
 
     private async Task<Dictionary<string, List<object>>> LoadForeignKeyLookupsAsync(SqlConnection conn, ConnectionInput connInfo, string schema, string table, List<ColumnInfo> columns)
     {

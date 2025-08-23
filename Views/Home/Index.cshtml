@@ -121,12 +121,6 @@
               </table>
             </div>
 
-            <div class="mt-3">
-              <label class="form-label">Rules JSON (tùy chọn, override theo bảng/cột)</label>
-              <textarea name="RulesJson" rows="10" class="form-control monospace">@Model.RulesJson</textarea>
-              <div class="form-text">Khóa bảng dùng format <strong>schema.table</strong> (vd: <code>dbo.Users</code>). Hỗ trợ các type: email, phone, fullname, firstname, lastname, username, password, title, sentence(s), paragraph(s), city, country, address, zip, guid, randomInt, randomDecimal, dateRecentYears, bool, code.</div>
-            </div>
-
             <div class="text-danger mt-2">
                 @Html.ValidationSummary()
             </div>
