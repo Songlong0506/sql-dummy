@@ -19,5 +19,4 @@ public class TablesSelectionInput
 {
     public ConnectionInput Connection { get; set; } = new ConnectionInput();
     public List<TableSeedRequest> Tables { get; set; } = new();
-    public string? RulesJson { get; set; }
 }
