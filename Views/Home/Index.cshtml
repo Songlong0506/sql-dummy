@@ -52,6 +52,7 @@
                     </select>
                     <button class="btn btn-outline-secondary" type="button" id="btnLoadDb">Load</button>
                 </div>
+                <div id="dbHelp" class="form-text text-muted">Chọn một database.</div>
             </div>
 
         </div>
@@ -164,6 +165,7 @@
     const dbSelect = document.getElementById('dbSelect');
     const btnLoad = document.getElementById('btnLoadDb');
     const dbHelp = document.getElementById('dbHelp');
+    const setDbHelp = msg => { if (dbHelp) dbHelp.textContent = msg; };
     const connectForm = document.querySelector('form');
     const tablesArea = document.getElementById('tablesArea');
 
@@ -219,7 +221,7 @@
         }
         dbSelect.innerHTML = '<option>Đang tải...</option>';
         dbSelect.disabled = true;
-        dbHelp.textContent = 'Đang tải danh sách DB...';
+        setDbHelp('Đang tải danh sách DB...');
 
         try {
             const res = await fetch('/Home/ListDatabases', {
@@ -230,7 +232,7 @@
             const js = await res.json();
             if (!js.ok){
                 dbSelect.innerHTML = '<option value="">-- chọn database --</option>';
-                dbHelp.textContent = 'Lỗi: ' + js.error;
+                setDbHelp('Lỗi: ' + js.error);
                 return;
             }
             const list = js.data || [];
@@ -242,13 +244,13 @@
                 dbSelect.appendChild(opt);
             });
             dbSelect.disabled = false;
-            dbHelp.textContent = 'Chọn một database.';
+            setDbHelp('Chọn một database.');
             if (selected) {
                 dbSelect.value = selected;
             }
         } catch (e){
             dbSelect.innerHTML = '<option value="">-- chọn database --</option>';
-            dbHelp.textContent = 'Lỗi: ' + e;
+            setDbHelp('Lỗi: ' + e);
         }
     }
 
