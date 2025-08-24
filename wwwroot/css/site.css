@@ -1,0 +1,45 @@
+.row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    color: #111;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    color: #6e6e73;
+}
+
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    border: 1px dashed var(--border);
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+hr.div {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+}
