@@ -1,0 +1,138 @@
+@model SqlDummySeeder.Excel.Models.TemplateEditViewModel
+@{
+    ViewData["Title"] = "Edit Template";
+}
+<form asp-action="Edit" method="post" id="editForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div class="card card-pad mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="m-0">Edit: @Model.Name</h4>
+            <a class="btn-small" asp-action="Index">Back</a>
+        </div>
+        <input asp-for="Name" placeholder="Template name" />
+        <div class="mt-2">
+            <button type="submit" class="btn-small btn-ok-soft">Save</button>
+        </div>
+    </div>
+
+    <div class="card card-pad">
+        <h5 class="mb-3">Columns</h5>
+
+        <div class="form-inline mb-3">
+            <input type="hidden" name="templateId" value="@Model.Id" />
+            <input type="text" name="name" placeholder="Column name" />
+            <select name="mode">
+                <option value="FromList">FromList</option>
+                <option value="FormatString">FormatString</option>
+            </select>
+            <button type="submit" formaction="@Url.Action("AddColumn")" formmethod="post" formnovalidate class="btn-small btn-ok-soft">Add Column</button>
+        </div>
+
+        <div class="table-responsive table-fixed">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:42px;"></th>
+                        <th style="min-width:180px;">Name</th>
+                        <th style="min-width:140px;">Mode</th>
+                        <th>Config</th>
+                        <th style="min-width:100px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="cols">
+@for (int i = 0; i < Model.Columns.Count; i++)
+{
+    var c = Model.Columns[i];
+    <tr data-id="@c.Id">
+        <td><span class="drag-handle" title="Drag to reorder">☰</span></td>
+        <td>@c.Name</td>
+        <td>@c.Mode</td>
+        <td>
+            <input type="hidden" name="Columns[@i].Id" value="@c.Id" />
+            @if (c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList)
+            {
+                <label class="help">Items (mỗi dòng 1 giá trị)</label>
+                <textarea class="monospace" name="Columns[@i].ListItemsRaw" rows="4">@c.ListItemsRaw</textarea>
+                <input type="hidden" name="Columns[@i].ListPickRandom" value="false" />
+                <label class="help">
+                    <input type="checkbox" name="Columns[@i].ListPickRandom" value="true" @(c.ListPickRandom ? "checked" : "") />
+                    Pick random
+                </label>
+                <input type="hidden" name="Columns[@i].FormatString" value="@c.FormatString" />
+            }
+            else
+            {
+                <label class="help">Format String</label>
+                <input type="text" name="Columns[@i].FormatString" value="@c.FormatString" />
+                <div class="help">
+                    Tokens:
+                    <code>{i}</code>, <code>{i:000}</code>, <code>{guid}</code>,
+                    <code>{date:yyyy-MM-dd}</code>, <code>{now:HHmmss}</code>,
+                    <code>{rand:100-999}</code>, <code>{pick:A|B|C}</code>
+                </div>
+                <input type="hidden" name="Columns[@i].ListItemsRaw" value="@c.ListItemsRaw" />
+                <input type="hidden" name="Columns[@i].ListPickRandom" value="@c.ListPickRandom" />
+            }
+        </td>
+        <td>
+            <button type="submit" formaction="@Url.Action("DeleteColumn")" formmethod="post" formnovalidate class="btn-small btn-danger-soft" name="id" value="@c.Id" onclick="return confirm('Delete column?')">Delete</button>
+        </td>
+    </tr>
+}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-3">
+            <a class="btn-small btn-warn-soft" asp-action="Export" asp-route-id="@Model.Id" asp-route-rows="100">Export 100 rows</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script>
+        (function () {
+            const tbody = document.getElementById('cols');
+            const idInput = document.getElementById('Id');
+            if (!tbody || !idInput) return;
+
+            new Sortable(tbody, {
+                handle: '.drag-handle',
+                animation: 150,
+                onEnd: () => {
+                    const ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(tr => tr.getAttribute('data-id'));
+                    const data = new FormData();
+                    data.append('templateId', idInput.value);
+                    ids.forEach(id => data.append('orderedIds', id));
+                    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (tokenInput) {
+                        data.append('__RequestVerificationToken', tokenInput.value);
+                    }
+                    fetch('@Url.Action("Reorder", "Templates")', {
+                        method: 'POST',
+                        body: data,
+                        credentials: 'same-origin'
+                    }).catch(console.error);
+                }
+            });
+        })();
+    </script>
+    <style>
+        .drag-handle {
+            cursor: grab;
+            user-select: none;
+            font-size: 18px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: var(--shadow)
+        }
+
+            .drag-handle:active {
+                cursor: grabbing
+            }
+    </style>
+}
