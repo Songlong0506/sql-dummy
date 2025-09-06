@@ -44,6 +44,9 @@
         <td class="d-flex gap-2">
             <a class="btn-small" asp-action="Edit" asp-route-id="@t.Id">Edit</a>
             <a class="btn-small btn-warn-soft export-link" asp-action="Export" asp-route-id="@t.Id">Export</a>
+            <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline" onsubmit="return confirm('Delete template?');">
+                <button type="submit" class="btn-small btn-danger-soft">Delete</button>
+            </form>
         </td>
     </tr>
 }

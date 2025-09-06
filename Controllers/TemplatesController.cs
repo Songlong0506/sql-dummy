@@ -53,18 +53,24 @@ public class TemplatesController : Controller
             Name = Path.GetFileNameWithoutExtension(file.FileName)
         };
 
-        var dataRow = headerRow.RowBelow();
         int order = 1;
         foreach (var cell in headerRow.CellsUsed())
         {
             var name = cell.GetString();
-            var format = dataRow?.Cell(cell.Address.ColumnNumber).GetString() ?? string.Empty;
+            var colNumber = cell.Address.ColumnNumber;
+            var values = ws.Column(colNumber)
+                .CellsUsed()
+                .Skip(1)
+                .Select(c => c.GetString())
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct()
+                .ToList();
             template.Columns.Add(new ColumnDefinition
             {
                 Order = order++,
                 Name = name,
-                Mode = ColumnValueMode.FormatString,
-                FormatString = format
+                Mode = ColumnValueMode.FromList,
+                ListItemsRaw = string.Join("\n", values)
             });
         }
 
@@ -200,6 +206,16 @@ public class TemplatesController : Controller
         _db.Columns.Remove(col);
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Edit), new { id = tid });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var template = await _db.Templates.FindAsync(id);
+        if (template is null) return NotFound();
+        _db.Templates.Remove(template);
+        await _db.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
     }
 
     public async Task<IActionResult> Export(int id, int rows = 100)
