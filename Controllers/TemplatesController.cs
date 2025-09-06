@@ -35,18 +35,47 @@ public class TemplatesController : Controller
 
     public async Task<IActionResult> Edit(int id)
     {
-        var template = await _db.Templates.FindAsync(id);
+        var template = await _db.Templates
+            .Include(t => t.Columns.OrderBy(c => c.Order))
+            .FirstOrDefaultAsync(t => t.Id == id);
         if (template is null) return NotFound();
-        ViewBag.Columns = await _db.Columns.Where(c => c.TemplateId == id).OrderBy(c => c.Order).ToListAsync();
-        return View(template);
+
+        var vm = new TemplateEditViewModel
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Columns = template.Columns.OrderBy(c => c.Order).Select(c => new ColumnEditViewModel
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Mode = c.Mode,
+                ListItemsRaw = c.ListItemsRaw,
+                ListPickRandom = c.ListPickRandom,
+                FormatString = c.FormatString
+            }).ToList()
+        };
+        return View(vm);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Template input)
+    public async Task<IActionResult> Edit(TemplateEditViewModel input)
     {
-        var entity = await _db.Templates.FindAsync(input.Id);
+        var entity = await _db.Templates
+            .Include(t => t.Columns)
+            .FirstOrDefaultAsync(t => t.Id == input.Id);
         if (entity is null) return NotFound();
+
         entity.Name = input.Name;
+
+        foreach (var colVm in input.Columns)
+        {
+            var col = entity.Columns.FirstOrDefault(c => c.Id == colVm.Id);
+            if (col is null) continue;
+            col.ListItemsRaw = (colVm.ListItemsRaw ?? string.Empty).Replace("\r\n", "\n");
+            col.ListPickRandom = colVm.ListPickRandom;
+            col.FormatString = colVm.FormatString;
+        }
+
         await _db.SaveChangesAsync();
         return RedirectToAction(nameof(Edit), new { id = entity.Id });
     }
@@ -94,26 +123,6 @@ public class TemplatesController : Controller
         return Ok(new { ok = true });
     }
 
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveList(int id, string? listItemsRaw, bool? listPickRandom)
-    {
-        var col = await _db.Columns.FindAsync(id);
-        if (col is null) return NotFound();
-        col.ListItemsRaw = (listItemsRaw ?? string.Empty).Replace("\r\n", "\n");
-        col.ListPickRandom = listPickRandom == true;
-        await _db.SaveChangesAsync();
-        return RedirectToAction(nameof(Edit), new { id = col.TemplateId });
-    }
-
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveFormat(int id, string? formatString)
-    {
-        var col = await _db.Columns.FindAsync(id);
-        if (col is null) return NotFound();
-        col.FormatString = formatString;
-        await _db.SaveChangesAsync();
-        return RedirectToAction(nameof(Edit), new { id = col.TemplateId });
-    }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteColumn(int id)
