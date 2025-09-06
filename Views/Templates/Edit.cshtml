@@ -58,11 +58,11 @@
             <div class="config-fromlist" style="display:@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "block" : "none")">
                 <label class="help">Items (mỗi dòng 1 giá trị)</label>
                 <textarea class="monospace" name="Columns[@i].ListItemsRaw" rows="4" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled")>@c.ListItemsRaw</textarea>
-                <input type="hidden" name="Columns[@i].ListPickRandom" value="false" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") />
                 <label class="help">
                     <input type="checkbox" name="Columns[@i].ListPickRandom" value="true" @(c.ListPickRandom ? "checked" : "") @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") />
                     Pick random
                 </label>
+                <input type="hidden" name="Columns[@i].ListPickRandom" value="false" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") />
             </div>
             <div class="config-formatstring" style="display:@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "block" : "none")">
                 <label class="help">Format String</label>
