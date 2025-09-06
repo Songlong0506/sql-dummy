@@ -4,19 +4,33 @@
 }
 <div class="card card-pad">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="m-0">Templates</h4>
-        <span class="badge-soft">@Model.Count() total</span>
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="m-0">Templates</h4>
+            <span class="badge-soft">@Model.Count() total</span>
+        </div>
+        <button id="addBtn" class="btn-small btn-ok-soft">Add</button>
     </div>
-
-    <form class="form-inline mb-3" asp-action="Create" method="post">
-        <input type="text" name="name" placeholder="New template name..." required />
-        <button type="submit" class="btn-small btn-ok-soft">Add</button>
-    </form>
-
-    <form class="form-inline mb-3" asp-action="Import" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".xlsx,.xls" required />
-        <button type="submit" class="btn-small btn-ok-soft">Import</button>
-    </form>
+    <div id="addDialog" class="modal-overlay">
+        <div class="card card-pad modal-card">
+            <h5 class="mb-3">Add Template</h5>
+            <form id="templateForm" method="post" enctype="multipart/form-data">
+                <div class="mb-2">
+                    <label class="d-inline-flex align-items-center me-3 mb-0"><input type="radio" name="mode" value="new" id="mode-new" checked class="me-1" /> New</label>
+                    <label class="d-inline-flex align-items-center mb-0"><input type="radio" name="mode" value="import" id="mode-import" class="me-1" /> Import</label>
+                </div>
+                <div id="name-group" class="mb-2">
+                    <input type="text" name="name" placeholder="Template name" required />
+                </div>
+                <div id="file-group" class="mb-2" style="display:none;">
+                    <input type="file" name="file" accept=".xlsx,.xls" />
+                </div>
+                <div class="d-flex gap-2 justify-content-end">
+                    <button type="submit" class="btn-small btn-ok-soft">Create</button>
+                    <button type="button" class="btn-small" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div class="table-responsive table-fixed">
         <table class="table">
@@ -49,5 +63,40 @@
                 }
             });
         });
+
+        const addBtn = document.getElementById('addBtn');
+        const dialog = document.getElementById('addDialog');
+        const newRadio = document.getElementById('mode-new');
+        const importRadio = document.getElementById('mode-import');
+        const nameGroup = document.getElementById('name-group');
+        const fileGroup = document.getElementById('file-group');
+        const form = document.getElementById('templateForm');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        function updateDialog() {
+            if (newRadio.checked) {
+                nameGroup.style.display = '';
+                fileGroup.style.display = 'none';
+                form.action = '@Url.Action("Create")';
+                form.querySelector('input[name="name"]').required = true;
+                form.querySelector('input[name="file"]').required = false;
+            } else {
+                nameGroup.style.display = 'none';
+                fileGroup.style.display = '';
+                form.action = '@Url.Action("Import")';
+                form.querySelector('input[name="name"]').required = false;
+                form.querySelector('input[name="file"]').required = true;
+            }
+        }
+
+        addBtn.addEventListener('click', () => {
+            newRadio.checked = true;
+            updateDialog();
+            dialog.classList.add('show');
+        });
+
+        newRadio.addEventListener('change', updateDialog);
+        importRadio.addEventListener('change', updateDialog);
+        cancelBtn.addEventListener('click', () => dialog.classList.remove('show'));
     </script>
 }
