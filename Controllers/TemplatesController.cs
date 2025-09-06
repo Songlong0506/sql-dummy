@@ -111,9 +111,22 @@ public class TemplatesController : Controller
         {
             var col = entity.Columns.FirstOrDefault(c => c.Id == colVm.Id);
             if (col is null) continue;
-            col.ListItemsRaw = (colVm.ListItemsRaw ?? string.Empty).Replace("\r\n", "\n");
-            col.ListPickRandom = colVm.ListPickRandom;
-            col.FormatString = colVm.FormatString;
+
+            col.Name = (colVm.Name ?? string.Empty).Trim();
+            col.Mode = colVm.Mode;
+
+            if (col.Mode == ColumnValueMode.FromList)
+            {
+                col.ListItemsRaw = (colVm.ListItemsRaw ?? string.Empty).Replace("\r\n", "\n");
+                col.ListPickRandom = colVm.ListPickRandom;
+                col.FormatString = null;
+            }
+            else
+            {
+                col.FormatString = colVm.FormatString;
+                col.ListItemsRaw = null;
+                col.ListPickRandom = false;
+            }
         }
 
         await _db.SaveChangesAsync();
