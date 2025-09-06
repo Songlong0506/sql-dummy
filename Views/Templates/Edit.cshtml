@@ -53,8 +53,7 @@
         <td>
             <input type="hidden" name="Columns[@i].Id" value="@c.Id" />
             <div class="config-fromlist" style="display:@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "block" : "none")">
-                <label class="help">Items (mỗi dòng 1 giá trị)</label>
-                <textarea class="monospace form-control w-100" name="Columns[@i].ListItemsRaw" rows="4" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled")>@c.ListItemsRaw</textarea>
+                <textarea class="monospace form-control w-100" name="Columns[@i].ListItemsRaw" rows="4" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") title="Items (mỗi dòng 1 giá trị)">@c.ListItemsRaw</textarea>
                 <label class="help">
                     <input type="checkbox" name="Columns[@i].ListPickRandom" value="true" @(c.ListPickRandom ? "checked" : "") @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") />
                     Pick random
@@ -62,13 +61,7 @@
                 <input type="hidden" name="Columns[@i].ListPickRandom" value="false" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") />
             </div>
             <div class="config-formatstring" style="display:@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "block" : "none")">
-                <input type="text" class="form-control w-100" name="Columns[@i].FormatString" value="@c.FormatString" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "" : "disabled") />
-                <div class="help">
-                    Tokens:
-                    <code>{i}</code>, <code>{i:000}</code>, <code>{guid}</code>,
-                    <code>{date:yyyy-MM-dd}</code>, <code>{now:HHmmss}</code>,
-                    <code>{rand:100-999}</code>, <code>{pick:A|B|C}</code>
-                </div>
+                <input type="text" class="form-control w-100" name="Columns[@i].FormatString" value="@c.FormatString" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "" : "disabled") title="Tokens: {i}, {i:000}, {guid}, {date:yyyy-MM-dd}, {now:HHmmss}, {rand:100-999}, {pick:A|B|C}" />
             </div>
         </td>
         <td>
