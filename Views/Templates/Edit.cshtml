@@ -49,8 +49,12 @@
         <td><input type="text" name="Columns[@i].Name" value="@c.Name" /></td>
         <td>
             <select name="Columns[@i].Mode" class="mode-select">
-                <option value="FromList" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "selected" : "")>FromList</option>
-                <option value="FormatString" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "selected" : "")>FormatString</option>
+                <option value="FromList" selected="@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList)">
+                    FromList
+                </option>
+                <option value="FormatString" selected="@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString)">
+                    FormatString
+                </option>
             </select>
         </td>
         <td>
