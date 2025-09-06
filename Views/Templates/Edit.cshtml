@@ -11,19 +11,18 @@
             <a class="btn-small" asp-action="Index">Back</a>
         </div>
         <input asp-for="Name" placeholder="Template name" />
-        <div class="mt-2 mb-4">
-            <button type="submit" class="btn-small btn-ok-soft">Save</button>
-        </div>
-        <h5 class="mb-3">Columns</h5>
+        <h5 class="my-3">Columns</h5>
 
         <div class="form-inline mb-3">
             <input type="hidden" name="templateId" value="@Model.Id" />
-            <input type="text" name="name" placeholder="Column name" />
-            <select name="mode">
-                <option value="FromList">FromList</option>
-                <option value="FormatString">FormatString</option>
-            </select>
-            <button type="submit" formaction="@Url.Action("AddColumn")" formmethod="post" formnovalidate class="btn-small btn-ok-soft">Add Column</button>
+            <div class="input-group">
+                <input type="text" name="name" placeholder="Column name" class="form-control" />
+                <select name="mode" class="form-select">
+                    <option value="FromList">FromList</option>
+                    <option value="FormatString">FormatString</option>
+                </select>
+            </div>
+            <button type="submit" formaction="@Url.Action("AddColumn")" formmethod="post" formnovalidate class="btn-small btn-ok-soft ms-2">Add Column</button>
         </div>
 
         <div class="table-responsive table-fixed">
@@ -31,8 +30,7 @@
                 <thead>
                     <tr>
                         <th style="width:42px;"></th>
-                        <th style="min-width:180px;">Name</th>
-                        <th style="min-width:140px;">Mode</th>
+                        <th style="min-width:320px;">Name / Mode</th>
                         <th>Config</th>
                         <th style="min-width:100px;"></th>
                     </tr>
@@ -43,16 +41,14 @@
     var c = Model.Columns[i];
     <tr data-id="@c.Id">
         <td><span class="drag-handle" title="Drag to reorder">☰</span></td>
-        <td><input type="text" name="Columns[@i].Name" value="@c.Name" /></td>
         <td>
-            <select name="Columns[@i].Mode" class="mode-select">
-                <option value="FromList" selected="@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList)">
-                    FromList
-                </option>
-                <option value="FormatString" selected="@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString)">
-                    FormatString
-                </option>
-            </select>
+            <div class="input-group">
+                <input type="text" name="Columns[@i].Name" value="@c.Name" class="form-control" />
+                <select name="Columns[@i].Mode" class="form-select mode-select">
+                    <option value="FromList" selected="@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList)">FromList</option>
+                    <option value="FormatString" selected="@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString)">FormatString</option>
+                </select>
+            </div>
         </td>
         <td>
             <input type="hidden" name="Columns[@i].Id" value="@c.Id" />
@@ -86,7 +82,8 @@
         </div>
 
         <div class="mt-3">
-            <a class="btn-small btn-warn-soft export-link" asp-action="Export" asp-route-id="@Model.Id">Export</a>
+            <button type="submit" class="btn-small btn-ok-soft">Save</button>
+            <a class="btn-small btn-warn-soft export-link ms-2" asp-action="Export" asp-route-id="@Model.Id">Export</a>
         </div>
     </div>
 </form>
