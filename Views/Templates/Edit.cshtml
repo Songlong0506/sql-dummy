@@ -21,8 +21,8 @@
                     <option value="FromList">FromList</option>
                     <option value="FormatString">FormatString</option>
                 </select>
+                <button type="submit" formaction="@Url.Action("AddColumn")" formmethod="post" formnovalidate class="btn-small btn-ok-soft">Add Column</button>
             </div>
-            <button type="submit" formaction="@Url.Action("AddColumn")" formmethod="post" formnovalidate class="btn-small btn-ok-soft ms-2">Add Column</button>
         </div>
 
         <div class="table-responsive table-fixed">
@@ -54,7 +54,7 @@
             <input type="hidden" name="Columns[@i].Id" value="@c.Id" />
             <div class="config-fromlist" style="display:@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "block" : "none")">
                 <label class="help">Items (mỗi dòng 1 giá trị)</label>
-                <textarea class="monospace" name="Columns[@i].ListItemsRaw" rows="4" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled")>@c.ListItemsRaw</textarea>
+                <textarea class="monospace form-control w-100" name="Columns[@i].ListItemsRaw" rows="4" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled")>@c.ListItemsRaw</textarea>
                 <label class="help">
                     <input type="checkbox" name="Columns[@i].ListPickRandom" value="true" @(c.ListPickRandom ? "checked" : "") @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") />
                     Pick random
@@ -63,7 +63,7 @@
             </div>
             <div class="config-formatstring" style="display:@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "block" : "none")">
                 <label class="help">Format String</label>
-                <input type="text" name="Columns[@i].FormatString" value="@c.FormatString" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "" : "disabled") />
+                <input type="text" class="form-control w-100" name="Columns[@i].FormatString" value="@c.FormatString" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "" : "disabled") />
                 <div class="help">
                     Tokens:
                     <code>{i}</code>, <code>{i:000}</code>, <code>{guid}</code>,
