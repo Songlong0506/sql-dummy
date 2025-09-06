@@ -208,6 +208,16 @@ public class TemplatesController : Controller
         return RedirectToAction(nameof(Edit), new { id = tid });
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var template = await _db.Templates.FindAsync(id);
+        if (template is null) return NotFound();
+        _db.Templates.Remove(template);
+        await _db.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
     public async Task<IActionResult> Export(int id, int rows = 100)
     {
         var template = await _db.Templates
