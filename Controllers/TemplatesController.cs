@@ -3,6 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using SqlDummySeeder.Excel.Data;
 using SqlDummySeeder.Excel.Models;
 using SqlDummySeeder.Excel.Services;
+using System.IO;
+using ClosedXML.Excel;
+using Microsoft.AspNetCore.Http;
+using System.Linq;
 
 namespace SqlDummySeeder.Excel.Controllers;
 
@@ -31,6 +35,42 @@ public class TemplatesController : Controller
             await _db.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Import(IFormFile file)
+    {
+        if (file is null || file.Length == 0) return RedirectToAction(nameof(Index));
+
+        using var stream = file.OpenReadStream();
+        using var wb = new XLWorkbook(stream);
+        var ws = wb.Worksheets.First();
+        var headerRow = ws.FirstRowUsed();
+        if (headerRow is null) return RedirectToAction(nameof(Index));
+
+        var template = new Template
+        {
+            Name = Path.GetFileNameWithoutExtension(file.FileName)
+        };
+
+        var dataRow = headerRow.RowBelow();
+        int order = 1;
+        foreach (var cell in headerRow.CellsUsed())
+        {
+            var name = cell.GetString();
+            var format = dataRow?.Cell(cell.Address.ColumnNumber).GetString() ?? string.Empty;
+            template.Columns.Add(new ColumnDefinition
+            {
+                Order = order++,
+                Name = name,
+                Mode = ColumnValueMode.FormatString,
+                FormatString = format
+            });
+        }
+
+        _db.Templates.Add(template);
+        await _db.SaveChangesAsync();
+        return RedirectToAction(nameof(Edit), new { id = template.Id });
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -71,9 +111,22 @@ public class TemplatesController : Controller
         {
             var col = entity.Columns.FirstOrDefault(c => c.Id == colVm.Id);
             if (col is null) continue;
-            col.ListItemsRaw = (colVm.ListItemsRaw ?? string.Empty).Replace("\r\n", "\n");
-            col.ListPickRandom = colVm.ListPickRandom;
-            col.FormatString = colVm.FormatString;
+
+            col.Name = (colVm.Name ?? string.Empty).Trim();
+            col.Mode = colVm.Mode;
+
+            if (col.Mode == ColumnValueMode.FromList)
+            {
+                col.ListItemsRaw = (colVm.ListItemsRaw ?? string.Empty).Replace("\r\n", "\n");
+                col.ListPickRandom = colVm.ListPickRandom;
+                col.FormatString = null;
+            }
+            else
+            {
+                col.FormatString = colVm.FormatString;
+                col.ListItemsRaw = null;
+                col.ListPickRandom = false;
+            }
         }
 
         await _db.SaveChangesAsync();

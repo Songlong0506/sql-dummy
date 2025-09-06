@@ -13,6 +13,11 @@
         <button type="submit" class="btn-small btn-ok-soft">Add</button>
     </form>
 
+    <form class="form-inline mb-3" asp-action="Import" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".xlsx,.xls" required />
+        <button type="submit" class="btn-small btn-ok-soft">Import</button>
+    </form>
+
     <div class="table-responsive table-fixed">
         <table class="table">
             <thead><tr><th>Name</th><th>Columns</th><th>Actions</th></tr></thead>
@@ -24,7 +29,7 @@
         <td>@t.Columns.Count</td>
         <td class="d-flex gap-2">
             <a class="btn-small" asp-action="Edit" asp-route-id="@t.Id">Edit</a>
-            <a class="btn-small btn-warn-soft" asp-action="Export" asp-route-id="@t.Id" asp-route-rows="100">Export 100</a>
+            <a class="btn-small btn-warn-soft export-link" asp-action="Export" asp-route-id="@t.Id">Export</a>
         </td>
     </tr>
 }
@@ -32,3 +37,17 @@
         </table>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.export-link').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                const rows = prompt('Enter number of rows to export', '100');
+                if (rows) {
+                    window.location = a.href + '?rows=' + encodeURIComponent(rows);
+                }
+            });
+        });
+    </script>
+}

@@ -46,34 +46,34 @@
     var c = Model.Columns[i];
     <tr data-id="@c.Id">
         <td><span class="drag-handle" title="Drag to reorder">☰</span></td>
-        <td>@c.Name</td>
-        <td>@c.Mode</td>
+        <td><input type="text" name="Columns[@i].Name" value="@c.Name" /></td>
+        <td>
+            <select name="Columns[@i].Mode" class="mode-select">
+                <option value="FromList" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "selected" : "")>FromList</option>
+                <option value="FormatString" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "selected" : "")>FormatString</option>
+            </select>
+        </td>
         <td>
             <input type="hidden" name="Columns[@i].Id" value="@c.Id" />
-            @if (c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList)
-            {
+            <div class="config-fromlist" style="display:@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "block" : "none")">
                 <label class="help">Items (mỗi dòng 1 giá trị)</label>
-                <textarea class="monospace" name="Columns[@i].ListItemsRaw" rows="4">@c.ListItemsRaw</textarea>
-                <input type="hidden" name="Columns[@i].ListPickRandom" value="false" />
+                <textarea class="monospace" name="Columns[@i].ListItemsRaw" rows="4" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled")>@c.ListItemsRaw</textarea>
                 <label class="help">
-                    <input type="checkbox" name="Columns[@i].ListPickRandom" value="true" @(c.ListPickRandom ? "checked" : "") />
+                    <input type="checkbox" name="Columns[@i].ListPickRandom" value="true" @(c.ListPickRandom ? "checked" : "") @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") />
                     Pick random
                 </label>
-                <input type="hidden" name="Columns[@i].FormatString" value="@c.FormatString" />
-            }
-            else
-            {
+                <input type="hidden" name="Columns[@i].ListPickRandom" value="false" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FromList ? "" : "disabled") />
+            </div>
+            <div class="config-formatstring" style="display:@(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "block" : "none")">
                 <label class="help">Format String</label>
-                <input type="text" name="Columns[@i].FormatString" value="@c.FormatString" />
+                <input type="text" name="Columns[@i].FormatString" value="@c.FormatString" @(c.Mode == SqlDummySeeder.Excel.Models.ColumnValueMode.FormatString ? "" : "disabled") />
                 <div class="help">
                     Tokens:
                     <code>{i}</code>, <code>{i:000}</code>, <code>{guid}</code>,
                     <code>{date:yyyy-MM-dd}</code>, <code>{now:HHmmss}</code>,
                     <code>{rand:100-999}</code>, <code>{pick:A|B|C}</code>
                 </div>
-                <input type="hidden" name="Columns[@i].ListItemsRaw" value="@c.ListItemsRaw" />
-                <input type="hidden" name="Columns[@i].ListPickRandom" value="@c.ListPickRandom" />
-            }
+            </div>
         </td>
         <td>
             <button type="submit" formaction="@Url.Action("DeleteColumn")" formmethod="post" formnovalidate class="btn-small btn-danger-soft" name="id" value="@c.Id" onclick="return confirm('Delete column?')">Delete</button>
@@ -85,7 +85,7 @@
         </div>
 
         <div class="mt-3">
-            <a class="btn-small btn-warn-soft" asp-action="Export" asp-route-id="@Model.Id" asp-route-rows="100">Export 100 rows</a>
+            <a class="btn-small btn-warn-soft export-link" asp-action="Export" asp-route-id="@Model.Id">Export</a>
         </div>
     </div>
 </form>
@@ -117,6 +117,37 @@
                     }).catch(console.error);
                 }
             });
+
+            document.querySelectorAll('.mode-select').forEach(sel => {
+                sel.addEventListener('change', () => {
+                    const row = sel.closest('tr');
+                    if (!row) return;
+                    const listDiv = row.querySelector('.config-fromlist');
+                    const fmtDiv = row.querySelector('.config-formatstring');
+                    if (sel.value === 'FromList') {
+                        listDiv.style.display = '';
+                        fmtDiv.style.display = 'none';
+                        listDiv.querySelectorAll('textarea,input').forEach(el => el.disabled = false);
+                        fmtDiv.querySelectorAll('textarea,input').forEach(el => el.disabled = true);
+                    } else {
+                        listDiv.style.display = 'none';
+                        fmtDiv.style.display = '';
+                        listDiv.querySelectorAll('textarea,input').forEach(el => el.disabled = true);
+                        fmtDiv.querySelectorAll('textarea,input').forEach(el => el.disabled = false);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.export-link').forEach(a => {
+                a.addEventListener('click', e => {
+                    e.preventDefault();
+                    const rows = prompt('Enter number of rows to export', '100');
+                    if (rows) {
+                        window.location = a.href + '?rows=' + encodeURIComponent(rows);
+                    }
+                });
+            });
+
         })();
     </script>
     <style>
