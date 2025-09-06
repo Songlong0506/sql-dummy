@@ -106,9 +106,14 @@
                     const data = new FormData();
                     data.append('templateId', idInput.value);
                     ids.forEach(id => data.append('orderedIds', id));
+                    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (tokenInput) {
+                        data.append('__RequestVerificationToken', tokenInput.value);
+                    }
                     fetch('@Url.Action("Reorder", "Templates")', {
                         method: 'POST',
-                        body: data
+                        body: data,
+                        credentials: 'same-origin'
                     }).catch(console.error);
                 }
             });
