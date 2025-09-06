@@ -3,6 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using SqlDummySeeder.Excel.Data;
 using SqlDummySeeder.Excel.Models;
 using SqlDummySeeder.Excel.Services;
+using System.IO;
+using ClosedXML.Excel;
+using Microsoft.AspNetCore.Http;
+using System.Linq;
 
 namespace SqlDummySeeder.Excel.Controllers;
 
@@ -31,6 +35,42 @@ public class TemplatesController : Controller
             await _db.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Import(IFormFile file)
+    {
+        if (file is null || file.Length == 0) return RedirectToAction(nameof(Index));
+
+        using var stream = file.OpenReadStream();
+        using var wb = new XLWorkbook(stream);
+        var ws = wb.Worksheets.First();
+        var headerRow = ws.FirstRowUsed();
+        if (headerRow is null) return RedirectToAction(nameof(Index));
+
+        var template = new Template
+        {
+            Name = Path.GetFileNameWithoutExtension(file.FileName)
+        };
+
+        var dataRow = headerRow.RowBelow();
+        int order = 1;
+        foreach (var cell in headerRow.CellsUsed())
+        {
+            var name = cell.GetString();
+            var format = dataRow?.Cell(cell.Address.ColumnNumber).GetString() ?? string.Empty;
+            template.Columns.Add(new ColumnDefinition
+            {
+                Order = order++,
+                Name = name,
+                Mode = ColumnValueMode.FormatString,
+                FormatString = format
+            });
+        }
+
+        _db.Templates.Add(template);
+        await _db.SaveChangesAsync();
+        return RedirectToAction(nameof(Edit), new { id = template.Id });
     }
 
     public async Task<IActionResult> Edit(int id)

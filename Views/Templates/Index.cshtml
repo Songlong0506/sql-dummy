@@ -13,6 +13,11 @@
         <button type="submit" class="btn-small btn-ok-soft">Add</button>
     </form>
 
+    <form class="form-inline mb-3" asp-action="Import" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".xlsx,.xls" required />
+        <button type="submit" class="btn-small btn-ok-soft">Import</button>
+    </form>
+
     <div class="table-responsive table-fixed">
         <table class="table">
             <thead><tr><th>Name</th><th>Columns</th><th>Actions</th></tr></thead>
