@@ -114,10 +114,24 @@ public class TemplatesController : Controller
             .Select((id, idx) => new { id, idx = idx + 1 })
             .ToDictionary(x => x.id, x => x.idx);
 
+        // update orders in two passes to avoid unique index conflicts
+        var offset = cols.Count + 1;
         foreach (var c in cols)
         {
             if (orderMap.TryGetValue(c.Id, out var newOrder))
+            {
+                // move to temporary range first
+                c.Order = newOrder + offset;
+            }
+        }
+        await _db.SaveChangesAsync();
+
+        foreach (var c in cols)
+        {
+            if (orderMap.TryGetValue(c.Id, out var newOrder))
+            {
                 c.Order = newOrder;
+            }
         }
         await _db.SaveChangesAsync();
         return Ok(new { ok = true });
